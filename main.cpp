@@ -8,15 +8,12 @@ unsigned int base;
 cube::GameController* GameController;
 
 void no_shenanigans UpdatePet(){
-    while (true){
-        if (GameController == (cube::GameController*)nullptr){
-            Sleep(1000);
-            continue;
-        }
-        if (GameController->shutdown){
-            break;
-        }
+    while (!GameController){
+        GameController = cube::GetGameController();
+        Sleep(100);
+    }
 
+    while (GameController && !GameController->shutdown){
         GameController->world.Lock();
         std::vector<cube::Creature*>* creatures = GameController->GetCreatures();
         cube::Creature* player = GameController->GetLocalPlayer();
@@ -44,13 +41,12 @@ void no_shenanigans UpdatePet(){
 
 extern "C" __declspec(dllexport) BOOL APIENTRY DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
 {
-    base = (unsigned int)GetModuleHandle(NULL);
-    cube::SetBase(base);
-    GameController = cube::GetGameController();
-
     switch (fdwReason)
     {
         case DLL_PROCESS_ATTACH:
+            GameController = (cube::GameController*)nullptr;
+            base = (unsigned int)GetModuleHandle(NULL);
+            cube::SetBase(base);
             CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)UpdatePet, 0, 0, NULL);
             break;
 
